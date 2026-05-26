@@ -4,7 +4,10 @@ import History from './pages/History.jsx'
 import Calendar from './pages/Calendar.jsx'
 import ChatBot from './components/ChatBot.jsx'
 
-const toDateStr = () => new Date().toISOString().split('T')[0]
+const toDateStr = () => {
+  const d = new Date()
+  return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-')
+}
 
 export default function App() {
   const [page, setPage] = useState('today')

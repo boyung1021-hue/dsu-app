@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { llmChat, parseTasks, CHAT_SYSTEM, GREETING_MSG, classifyQuery, findRelevantRecords, formatRecordsContext } from '../llm.js'
 
-const toDateStr = () => new Date().toISOString().split('T')[0]
+const toDateStr = () => {
+  const d = new Date()
+  return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-')
+}
 
 // DSU 미작성 여부에 따라 초기 모드 결정
 // mode: 'onboarding' | 'chat'

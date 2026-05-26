@@ -5,7 +5,10 @@ import MemoPanel from '../components/MemoPanel.jsx'
 
 const emptyForm = { yesterday: '', today: '', blocker: '', tasks: [] }
 
-const getTodayStr = () => new Date().toISOString().split('T')[0]
+const getTodayStr = () => {
+  const d = new Date()
+  return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-')
+}
 
 const addDays = (dateStr, n) => {
   const d = new Date(dateStr + 'T00:00:00')

@@ -15,7 +15,8 @@ const DATA_DIR = isDev
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true })
 
-const toDateStr = (d = new Date()) => d.toISOString().split('T')[0]
+const toDateStr = (d = new Date()) =>
+  [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-')
 const mdPath = (date) => path.join(DATA_DIR, `${date}.md`)
 
 // ── 마크다운 파싱/생성 헬퍼 ─────────────────────────────
