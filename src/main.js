@@ -10,7 +10,7 @@ const isDev = !app.isPackaged
 
 // 데이터 디렉토리: 프로젝트 내 /data
 const DATA_DIR = isDev
-  ? path.join(__dirname, '../../data')
+  ? path.join(__dirname, '../data')
   : path.join(app.getAppPath(), 'data')
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true })
