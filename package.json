@@ -1,0 +1,28 @@
+{
+  "name": "dsu-app",
+  "version": "1.0.0",
+  "description": "개인 DSU 기록기 with 로컬 LLM",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "vite build && electron-builder"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "concurrently": "^8.0.0",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0",
+    "vite": "^5.0.0",
+    "wait-on": "^7.0.0"
+  },
+  "build": {
+    "appId": "com.personal.dsu-app",
+    "productName": "DSU",
+    "directories": { "output": "dist-electron" },
+    "files": ["src/**/*", "dist/**/*", "data/.gitkeep"]
+  }
+}
