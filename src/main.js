@@ -132,21 +132,29 @@ ipcMain.handle('dsu:carryover', (_, fromDate, toDate) => {
   if (!fs.existsSync(fromFp)) return []
 
   const from = parseMd(fs.readFileSync(fromFp, 'utf-8'))
+  const done = from.tasks.filter(t => t.done)
   const unfinished = from.tasks.filter(t => !t.done)
-  if (unfinished.length === 0) return []
+  if (done.length === 0 && unfinished.length === 0) return []
 
   const toFp = mdPath(toDate)
   const to = fs.existsSync(toFp)
     ? parseMd(fs.readFileSync(toFp, 'utf-8'))
     : { yesterday: '', today: '', blocker: '', tasks: [], memos: [] }
 
-  // 중복 제거 후 이월
-  const existingTexts = new Set(to.tasks.map(t => t.text))
-  const merged = [
-    ...to.tasks,
-    ...unfinished.filter(t => !existingTexts.has(t.text)).map(t => ({ ...t, done: false }))
-  ]
-  to.tasks = merged
+  // 완료 항목 → "어제 한 일" 자동 채우기 (비어있을 때만)
+  if (!to.yesterday && done.length > 0) {
+    to.yesterday = done.map(t => `• ${t.text}`).join('\n')
+  }
+
+  // 미완료 항목 → 오늘 체크리스트에 이월 (중복 제거)
+  if (unfinished.length > 0) {
+    const existingTexts = new Set(to.tasks.map(t => t.text))
+    to.tasks = [
+      ...to.tasks,
+      ...unfinished.filter(t => !existingTexts.has(t.text)).map(t => ({ ...t, done: false }))
+    ]
+  }
+
   fs.writeFileSync(toFp, buildMd(toDate, to), 'utf-8')
   return unfinished
 })

@@ -218,8 +218,8 @@ export default function ChatBot({ todayData, selectedDate, selectedMemoId, onClo
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13
           }}>✦</div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500 }}>DSU 봇</div>
-            <div style={{ fontSize: 10, color: 'var(--text3)' }}>127.0.0.1:1234</div>
+            <div style={{ fontSize: 13, fontWeight: 500 }}>챗봇</div>
+            <div style={{ fontSize: 10, color: 'var(--text3)' }}>gemma-4-e4b-it</div>
           </div>
         </div>
         <button onClick={onClose} style={{

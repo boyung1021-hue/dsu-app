@@ -27,6 +27,7 @@ const fmtDisplay = (dateStr) =>
 
 export default function Today({ selectedDate, onDateChange, onRefresh, selectedMemoId, onMemoSelect, refreshKey = 0 }) {
   const saveTimerRef = useRef(null)
+  const pendingSaveRef = useRef(null)
   const selectedDateRef = useRef(selectedDate)
   const carryoverDoneRef = useRef(false)
 
@@ -48,6 +49,12 @@ export default function Today({ selectedDate, onDateChange, onRefresh, selectedM
       saveTimerRef.current = null
     }
 
+    if (pendingSaveRef.current) {
+      const { date, form: pendingForm } = pendingSaveRef.current
+      pendingSaveRef.current = null
+      window.api.dsu.save(date, pendingForm)
+    }
+
     const load = async () => {
       const TODAY = getTodayStr()
       if (selectedDate === TODAY && !carryoverDoneRef.current) {
@@ -67,8 +74,10 @@ export default function Today({ selectedDate, onDateChange, onRefresh, selectedM
 
   const autoSave = useCallback((newForm) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    const date = selectedDateRef.current
+    pendingSaveRef.current = { date, form: newForm }
     saveTimerRef.current = setTimeout(async () => {
-      const date = selectedDateRef.current
+      pendingSaveRef.current = null
       await window.api.dsu.save(date, newForm)
       setSaved(true)
       setTimeout(() => setSaved(false), 1500)
