@@ -15,6 +15,7 @@ export default function App() {
   const [loadingToday, setLoadingToday] = useState(true)
   const [selectedDate, setSelectedDate] = useState(toDateStr())
   const [selectedMemoId, setSelectedMemoId] = useState(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     window.api.dsu.load(toDateStr()).then(data => {
@@ -26,6 +27,12 @@ export default function App() {
   const refreshToday = useCallback(async () => {
     const data = await window.api.dsu.load(toDateStr())
     setTodayData(data)
+  }, [])
+
+  const refreshFromBot = useCallback(async () => {
+    const data = await window.api.dsu.load(toDateStr())
+    setTodayData(data)
+    setRefreshKey(k => k + 1)
   }, [])
 
   // DSU 미작성이면 챗봇 자동 열기
@@ -136,6 +143,7 @@ export default function App() {
               onRefresh={refreshToday}
               selectedMemoId={selectedMemoId}
               onMemoSelect={setSelectedMemoId}
+              refreshKey={refreshKey}
             />
           )}
           {page === 'history' && <History />}
@@ -173,8 +181,10 @@ export default function App() {
             />
             <ChatBot
               todayData={todayData}
+              selectedDate={selectedDate}
+              selectedMemoId={selectedMemoId}
               onClose={() => setChatOpen(false)}
-              onRefresh={refreshToday}
+              onRefresh={refreshFromBot}
             />
           </div>
         )}

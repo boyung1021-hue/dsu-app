@@ -5,7 +5,7 @@ const toDateStr = () => new Date().toISOString().split('T')[0]
 
 // DSU 미작성 여부에 따라 초기 모드 결정
 // mode: 'onboarding' | 'chat'
-export default function ChatBot({ todayData, onClose, onRefresh }) {
+export default function ChatBot({ todayData, selectedDate, selectedMemoId, onClose, onRefresh }) {
   const today = toDateStr()
   const isNew = !todayData
 
@@ -14,6 +14,86 @@ export default function ChatBot({ todayData, onClose, onRefresh }) {
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState(isNew ? 'onboarding' : 'chat')
   const bottomRef = useRef(null)
+
+  const parseAndExecuteActions = async (responseText) => {
+    const ACTION_RE = /\[ACTION:(\w+)([^\]]*)\]/g
+    const actions = []
+    let m
+
+    while ((m = ACTION_RE.exec(responseText)) !== null) {
+      const type = m[1]
+      const params = {}
+      const PARAM_RE = /(\w+)="((?:[^"\\]|\\.)*)"/g
+      let pm
+      while ((pm = PARAM_RE.exec(m[2])) !== null) {
+        params[pm[1]] = pm[2].replace(/\\n/g, '\n')
+      }
+      actions.push({ type, params })
+    }
+
+    const cleanText = responseText.replace(/\[ACTION:\w+[^\]]*\]/g, '').trim()
+
+    if (actions.length === 0) return { cleanText, actionResults: [] }
+
+    const date = selectedDate || toDateStr()
+    const actionResults = []
+
+    for (const { type, params } of actions) {
+      try {
+        if (type === 'UPDATE_FIELD') {
+          const { field, value } = params
+          if (field && value !== undefined) {
+            const existing = await window.api.dsu.load(date) || {}
+            await window.api.dsu.save(date, { ...existing, [field]: value })
+            onRefresh()
+            const labels = { yesterday: '어제 한 일', today: '오늘 할 일', blocker: '장애물' }
+            actionResults.push(`✓ ${labels[field] || field} 업데이트됨`)
+          }
+        } else if (type === 'ADD_TASK') {
+          const { text } = params
+          if (text) {
+            const existing = await window.api.dsu.load(date) || {}
+            await window.api.dsu.save(date, {
+              ...existing,
+              tasks: [...(existing.tasks || []), { text, done: false }]
+            })
+            onRefresh()
+            actionResults.push('✓ 체크리스트 항목 추가됨')
+          }
+        } else if (type === 'COMPLETE_TASK') {
+          const { text } = params
+          if (text) {
+            const existing = await window.api.dsu.load(date) || {}
+            const lower = text.toLowerCase()
+            const tasks = (existing.tasks || []).map(t =>
+              t.text.toLowerCase().includes(lower) ? { ...t, done: true } : t
+            )
+            await window.api.dsu.save(date, { ...existing, tasks })
+            onRefresh()
+            actionResults.push('✓ 체크리스트 항목 완료 처리됨')
+          }
+        } else if (type === 'ADD_MEMO') {
+          const { title, content } = params
+          await window.api.memo.add(date, { title: title || '', content: content || '' })
+          onRefresh()
+          actionResults.push('✓ 메모 추가됨')
+        } else if (type === 'UPDATE_MEMO') {
+          const { title, content } = params
+          if (selectedMemoId) {
+            await window.api.memo.update(date, selectedMemoId, { title: title || '', content: content || '' })
+            onRefresh()
+            actionResults.push('✓ 메모 수정됨')
+          } else {
+            actionResults.push('⚠️ 수정할 메모가 선택되지 않았습니다')
+          }
+        }
+      } catch (e) {
+        actionResults.push(`⚠️ 액션 실행 실패: ${e.message}`)
+      }
+    }
+
+    return { cleanText, actionResults }
+  }
 
   // 초기 인사
   useEffect(() => {
@@ -108,7 +188,8 @@ export default function ChatBot({ todayData, onClose, onRefresh }) {
         ])
 
         setMessages(m => m.filter(msg => msg.type !== 'loading'))
-        addMsg('assistant', reply)
+        const { cleanText, actionResults } = await parseAndExecuteActions(reply)
+        addMsg('assistant', cleanText, { actionResults })
       }
     } catch (e) {
       setMessages(m => m.filter(msg => msg.type !== 'loading'))
@@ -164,6 +245,16 @@ export default function ChatBot({ todayData, onClose, onRefresh }) {
               border: m.role === 'user' ? 'none' : '1px solid var(--border)'
             }}>
               {m.content}
+              {m.actionResults?.length > 0 && (
+                <div style={{
+                  marginTop: 6, paddingTop: 5,
+                  borderTop: '1px solid rgba(127,119,221,0.2)',
+                  fontSize: 11, color: 'var(--text3)',
+                  display: 'flex', flexDirection: 'column', gap: 2
+                }}>
+                  {m.actionResults.map((r, i) => <div key={i}>{r}</div>)}
+                </div>
+              )}
             </div>
           </div>
         ))}

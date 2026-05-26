@@ -22,7 +22,7 @@ const fmtDisplay = (dateStr) =>
     month: 'long', day: 'numeric', weekday: 'short'
   })
 
-export default function Today({ selectedDate, onDateChange, onRefresh, selectedMemoId, onMemoSelect }) {
+export default function Today({ selectedDate, onDateChange, onRefresh, selectedMemoId, onMemoSelect, refreshKey = 0 }) {
   const saveTimerRef = useRef(null)
   const selectedDateRef = useRef(selectedDate)
   const carryoverDoneRef = useRef(false)
@@ -60,7 +60,7 @@ export default function Today({ selectedDate, onDateChange, onRefresh, selectedM
 
     load()
     return () => { mounted = false }
-  }, [selectedDate])
+  }, [selectedDate, refreshKey])
 
   const autoSave = useCallback((newForm) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
