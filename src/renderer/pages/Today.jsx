@@ -3,7 +3,7 @@ import DsuField from '../components/DsuField.jsx'
 import Checklist from '../components/Checklist.jsx'
 import MemoPanel from '../components/MemoPanel.jsx'
 
-const emptyForm = { yesterday: '', today: '', blocker: '', tasks: [] }
+const emptyForm = { yesterday: '', today: '', tasks: [] }
 
 const getTodayStr = () => {
   const d = new Date()
@@ -27,7 +27,6 @@ const fmtDisplay = (dateStr) =>
 
 export default function Today({ selectedDate, onDateChange, onRefresh, selectedMemoId, onMemoSelect, refreshKey = 0 }) {
   const saveTimerRef = useRef(null)
-  const pendingSaveRef = useRef(null)
   const selectedDateRef = useRef(selectedDate)
   const carryoverDoneRef = useRef(false)
 
@@ -49,12 +48,6 @@ export default function Today({ selectedDate, onDateChange, onRefresh, selectedM
       saveTimerRef.current = null
     }
 
-    if (pendingSaveRef.current) {
-      const { date, form: pendingForm } = pendingSaveRef.current
-      pendingSaveRef.current = null
-      window.api.dsu.save(date, pendingForm)
-    }
-
     const load = async () => {
       const TODAY = getTodayStr()
       if (selectedDate === TODAY && !carryoverDoneRef.current) {
@@ -74,10 +67,8 @@ export default function Today({ selectedDate, onDateChange, onRefresh, selectedM
 
   const autoSave = useCallback((newForm) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    const date = selectedDateRef.current
-    pendingSaveRef.current = { date, form: newForm }
     saveTimerRef.current = setTimeout(async () => {
-      pendingSaveRef.current = null
+      const date = selectedDateRef.current
       await window.api.dsu.save(date, newForm)
       setSaved(true)
       setTimeout(() => setSaved(false), 1500)
@@ -204,10 +195,6 @@ export default function Today({ selectedDate, onDateChange, onRefresh, selectedM
           <DsuField label="오늘 할 일" field="today"
             value={form.today} onChange={v => update('today', v)}
             placeholder="오늘 진행할 작업들..." rows={4} />
-
-          <DsuField label="장애물" field="blocker"
-            value={form.blocker} onChange={v => update('blocker', v)}
-            placeholder="막히는 부분이나 도움이 필요한 것..." rows={2} />
 
           {form.tasks.length > 0 && (
             <div className="fade-in">

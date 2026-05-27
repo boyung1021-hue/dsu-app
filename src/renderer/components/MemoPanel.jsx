@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 
 const fmtTime = (isoStr) => {
   try {
@@ -54,10 +55,114 @@ function MemoItem({ memo, selected, onSelect, onDelete }) {
   )
 }
 
+function ExpandModal({ editForm, onChange, onClose }) {
+  const textareaRef = useRef(null)
+
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }, [editForm.content])
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  return createPortal(
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        background: 'rgba(0,0,0,0.55)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '70vw', maxWidth: 860,
+          height: '75vh',
+          background: 'var(--bg2)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          display: 'flex', flexDirection: 'column',
+          overflow: 'hidden',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.4)'
+        }}
+      >
+        {/* 모달 헤더 */}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          borderBottom: '1px solid var(--border)',
+          padding: '0 8px 0 0'
+        }}>
+          <input
+            value={editForm.title}
+            onChange={e => onChange('title', e.target.value)}
+            placeholder="제목"
+            style={{
+              flex: 1,
+              padding: '16px 16px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: 0,
+              fontSize: 20, fontWeight: 600,
+              color: 'var(--text)',
+            }}
+          />
+          <button
+            onClick={onClose}
+            title="닫기 (Esc)"
+            style={{
+              width: 28, height: 28, padding: 0, flexShrink: 0,
+              background: 'transparent', border: 'none',
+              color: 'var(--text3)', fontSize: 18,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: 6, cursor: 'pointer'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.background = 'var(--bg3)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text3)'; e.currentTarget.style.background = 'transparent' }}
+          >×</button>
+        </div>
+
+        {/* 모달 내용 */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <textarea
+            ref={textareaRef}
+            value={editForm.content}
+            onChange={e => onChange('content', e.target.value)}
+            placeholder="내용을 입력하세요..."
+            style={{
+              padding: '16px 20px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: 0,
+              fontSize: 14,
+              color: 'var(--text2)',
+              resize: 'none',
+              lineHeight: 1.9,
+              minHeight: '100%',
+              height: 'auto',
+              overflow: 'hidden',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
 export default function MemoPanel({ date, selectedMemoId, onMemoSelect }) {
   const [memos, setMemos] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [editForm, setEditForm] = useState({ title: '', content: '' })
+  const [expanded, setExpanded] = useState(false)
   const saveTimerRef = useRef(null)
   const textareaRef = useRef(null)
   const selectedMemoIdRef = useRef(selectedMemoId)
@@ -137,102 +242,132 @@ export default function MemoPanel({ date, selectedMemoId, onMemoSelect }) {
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      background: 'var(--bg2)',
-      border: '1px solid var(--border)',
-      borderRadius: 'var(--radius)',
-      overflow: 'hidden',
-      minHeight: 240
-    }}>
-      {/* 목록 패널 */}
+    <>
       <div style={{
-        width: 200, flexShrink: 0,
-        borderRight: '1px solid var(--border)',
-        display: 'flex', flexDirection: 'column'
+        display: 'flex',
+        background: 'var(--bg2)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+        overflow: 'hidden',
+        minHeight: 240
       }}>
-        <button
-          onClick={addMemo}
-          style={{
-            padding: '10px 12px',
-            background: 'transparent',
-            color: 'var(--accent)',
-            border: 'none',
-            borderBottom: '1px solid var(--border)',
-            textAlign: 'left',
-            fontSize: 12, fontWeight: 500,
-            borderRadius: 0
-          }}
-        >
-          + 새 메모
-        </button>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {memos.length === 0 ? (
-            <div style={{ padding: '14px 12px', fontSize: 12, color: 'var(--text3)' }}>
-              메모가 없어요
+        {/* 목록 패널 */}
+        <div style={{
+          width: 200, flexShrink: 0,
+          borderRight: '1px solid var(--border)',
+          display: 'flex', flexDirection: 'column'
+        }}>
+          <button
+            onClick={addMemo}
+            style={{
+              padding: '10px 12px',
+              background: 'transparent',
+              color: 'var(--accent)',
+              border: 'none',
+              borderBottom: '1px solid var(--border)',
+              textAlign: 'left',
+              fontSize: 12, fontWeight: 500,
+              borderRadius: 0
+            }}
+          >
+            + 새 메모
+          </button>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {memos.length === 0 ? (
+              <div style={{ padding: '14px 12px', fontSize: 12, color: 'var(--text3)' }}>
+                메모가 없어요
+              </div>
+            ) : memos.map(m => (
+              <MemoItem
+                key={m.id}
+                memo={m}
+                selected={m.id === selectedId}
+                onSelect={() => selectMemo(m.id)}
+                onDelete={() => deleteMemo(m.id)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* 편집 패널 */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          {!selectedId ? (
+            <div style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--text3)', fontSize: 13
+            }}>
+              ← 메모를 선택하거나 새로 만들어보세요
             </div>
-          ) : memos.map(m => (
-            <MemoItem
-              key={m.id}
-              memo={m}
-              selected={m.id === selectedId}
-              onSelect={() => selectMemo(m.id)}
-              onDelete={() => deleteMemo(m.id)}
-            />
-          ))}
+          ) : (
+            <>
+              <div style={{
+                display: 'flex', alignItems: 'center',
+                borderBottom: '1px solid var(--border)',
+                padding: '0 8px 0 0'
+              }}>
+                <input
+                  value={editForm.title}
+                  onChange={e => handleChange('title', e.target.value)}
+                  placeholder="제목"
+                  style={{
+                    flex: 1,
+                    padding: '14px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: 0,
+                    fontSize: 17, fontWeight: 600,
+                    color: 'var(--text)',
+                  }}
+                />
+                <button
+                  onClick={() => setExpanded(true)}
+                  title="크게 보기"
+                  style={{
+                    width: 26, height: 26, padding: 0, flexShrink: 0,
+                    background: 'transparent', border: 'none',
+                    color: 'var(--text3)', fontSize: 13,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    borderRadius: 5, cursor: 'pointer'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.background = 'var(--bg3)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--text3)'; e.currentTarget.style.background = 'transparent' }}
+                >
+                  ⛶
+                </button>
+              </div>
+              <textarea
+                ref={textareaRef}
+                value={editForm.content}
+                onChange={e => handleChange('content', e.target.value)}
+                placeholder="내용을 입력하세요..."
+                style={{
+                  padding: '14px 16px',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: 0,
+                  fontSize: 13,
+                  color: 'var(--text2)',
+                  resize: 'none',
+                  lineHeight: 1.8,
+                  minHeight: 200,
+                  height: 'auto',
+                  overflow: 'hidden',
+                  width: '100%',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </>
+          )}
         </div>
       </div>
 
-      {/* 편집 패널 */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {!selectedId ? (
-          <div style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--text3)', fontSize: 13
-          }}>
-            ← 메모를 선택하거나 새로 만들어보세요
-          </div>
-        ) : (
-          <>
-            <input
-              value={editForm.title}
-              onChange={e => handleChange('title', e.target.value)}
-              placeholder="제목"
-              style={{
-                padding: '14px 16px',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: '1px solid var(--border)',
-                borderRadius: 0,
-                fontSize: 17, fontWeight: 600,
-                color: 'var(--text)',
-                width: '100%'
-              }}
-            />
-            <textarea
-              ref={textareaRef}
-              value={editForm.content}
-              onChange={e => handleChange('content', e.target.value)}
-              placeholder="내용을 입력하세요..."
-              style={{
-                padding: '14px 16px',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: 0,
-                fontSize: 13,
-                color: 'var(--text2)',
-                resize: 'none',
-                lineHeight: 1.8,
-                minHeight: 200,
-                height: 'auto',
-                overflow: 'hidden',
-                width: '100%',
-                boxSizing: 'border-box'
-              }}
-            />
-          </>
-        )}
-      </div>
-    </div>
+      {expanded && selectedId && (
+        <ExpandModal
+          editForm={editForm}
+          onChange={handleChange}
+          onClose={() => setExpanded(false)}
+        />
+      )}
+    </>
   )
 }
