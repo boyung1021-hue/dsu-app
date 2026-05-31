@@ -196,11 +196,7 @@ export default function Today({ selectedDate, onDateChange, onRefresh, selectedM
             value={form.today} onChange={v => update('today', v)}
             placeholder="오늘 진행할 작업들..." rows={4} />
 
-          {form.tasks.length > 0 && (
-            <div className="fade-in">
-              <Checklist tasks={form.tasks} onChange={updateTasks} />
-            </div>
-          )}
+          <Checklist tasks={form.tasks} onChange={updateTasks} />
 
           <div>
             <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Today from './pages/Today.jsx'
 import History from './pages/History.jsx'
 import Calendar from './pages/Calendar.jsx'
+import Memos from './pages/Memos.jsx'
 import ChatBot from './components/ChatBot.jsx'
 
 const toDateStr = () => {
@@ -80,10 +81,17 @@ export default function App() {
     setPage('today')
   }, [])
 
+  const handleMemoOpen = useCallback((date, memoId) => {
+    setSelectedDate(date)
+    setSelectedMemoId(memoId)
+    setPage('today')
+  }, [])
+
   const tabs = [
     { id: 'today', label: '오늘' },
     { id: 'history', label: '기록' },
-    { id: 'calendar', label: '달력' }
+    { id: 'calendar', label: '달력' },
+    { id: 'memos', label: '메모' }
   ]
 
   return (
@@ -156,6 +164,9 @@ export default function App() {
               onDateSelect={handleDateSelect}
               onMemoSelect={setSelectedMemoId}
             />
+          )}
+          {page === 'memos' && (
+            <Memos onMemoOpen={handleMemoOpen} />
           )}
         </div>
 
