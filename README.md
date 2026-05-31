@@ -78,3 +78,4 @@ src/
         ├── Checklist.jsx   ← 체크리스트 UI
         └── ChatBot.jsx     ← AI 챗봇 패널
 ```
+# dsu-app
