@@ -262,17 +262,6 @@ export default function ChatBot({ todayData, selectedDate, selectedMemoId, onClo
           </div>
         ))}
 
-        {loading && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-            <div style={{
-              padding: '9px 14px', borderRadius: '12px 12px 12px 3px',
-              background: 'var(--bg3)', border: '1px solid var(--border)',
-              fontSize: 13, color: 'var(--text3)'
-            }}>
-              <span style={{ animation: 'pulse 1s infinite' }}>생각 중...</span>
-            </div>
-          </div>
-        )}
         <div ref={bottomRef} />
       </div>
 

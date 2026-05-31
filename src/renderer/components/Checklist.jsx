@@ -96,7 +96,12 @@ export default function Checklist({ tasks, onChange }) {
         <input
           value={newText}
           onChange={e => setNewText(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && add()}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+              e.preventDefault()
+              add()
+            }
+          }}
           placeholder="항목 추가..."
           style={{ fontSize: 13, padding: '6px 10px' }}
         />
