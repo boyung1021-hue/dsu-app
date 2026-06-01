@@ -16,13 +16,20 @@
     "concurrently": "^8.0.0",
     "electron": "^28.0.0",
     "electron-builder": "^24.0.0",
+    "playwright-core": "^1.60.0",
     "vite": "^5.0.0",
     "wait-on": "^7.0.0"
   },
   "build": {
     "appId": "com.personal.dsu-app",
     "productName": "DSU",
-    "directories": { "output": "dist-electron" },
-    "files": ["src/**/*", "dist/**/*", "data/.gitkeep"]
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "src/**/*",
+      "dist/**/*",
+      "data/.gitkeep"
+    ]
   }
 }

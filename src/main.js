@@ -72,6 +72,17 @@ function parseMd(content) {
   }
 }
 
+function buildDsuMemoContent(data) {
+  const parts = []
+  if (data.today?.trim()) parts.push(`### 오늘 할 일\n${data.today.trim()}`)
+  if (data.tasks?.length > 0) {
+    const lines = data.tasks.map(t => `- [${t.done ? 'x' : ' '}] ${t.text}`).join('\n')
+    parts.push(`### 체크리스트\n${lines}`)
+  }
+  if (data.yesterday?.trim()) parts.push(`### 어제 한 일\n${data.yesterday.trim()}`)
+  return parts.length ? parts.join('\n\n') + '\n\n#dsu' : ''
+}
+
 function buildMd(date, data) {
   const taskLines = (data.tasks || [])
     .map(t => `- [${t.done ? 'x' : ' '}] ${t.text}`)
@@ -106,11 +117,22 @@ ipcMain.handle('dsu:load', (_, date) => {
 
 ipcMain.handle('dsu:save', (_, date, data) => {
   const fp = mdPath(date)
-  // 메모는 MemoPanel이 독립 관리하므로 dsu:save 시 기존 메모 보존
   let memos = data.memos
   if (!memos) {
     memos = fs.existsSync(fp) ? (parseMd(fs.readFileSync(fp, 'utf-8')).memos || []) : []
   }
+
+  // DSU 내용을 "Daily Stand-up" 메모로 자동 동기화
+  const dsuContent = buildDsuMemoContent(data)
+  if (dsuContent) {
+    const idx = memos.findIndex(m => m.title === 'Daily Stand-up')
+    if (idx >= 0) {
+      memos = memos.map((m, i) => i === idx ? { ...m, content: dsuContent } : m)
+    } else {
+      memos = [...memos, { id: genId(), title: 'Daily Stand-up', content: dsuContent, createdAt: new Date().toISOString() }]
+    }
+  }
+
   fs.writeFileSync(fp, buildMd(date, { ...data, memos }), 'utf-8')
   return true
 })
