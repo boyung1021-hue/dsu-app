@@ -15,6 +15,18 @@ const DATA_DIR = isDev
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true })
 
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json')
+
+function loadSettings() {
+  try {
+    return fs.existsSync(SETTINGS_FILE) ? JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8')) : {}
+  } catch { return {} }
+}
+
+function saveSettings(settings) {
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8')
+}
+
 const toDateStr = (d = new Date()) =>
   [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-')
 const mdPath = (date) => path.join(DATA_DIR, `${date}.md`)
@@ -210,8 +222,15 @@ ipcMain.handle('memo:delete', (_, date, id) => {
   return true
 })
 
+ipcMain.handle('settings:get', () => loadSettings())
+ipcMain.handle('settings:set', (_, settings) => { saveSettings(settings); return true })
+
 // 로컬 LLM 호출 (LM Studio: OpenAI 호환 API)
 ipcMain.handle('llm:chat', async (_, messages) => {
+  const settings = loadSettings()
+  const baseUrl = (settings.llmUrl || 'http://127.0.0.1:1234').replace(/\/$/, '')
+  const url = new URL(baseUrl + '/v1/chat/completions')
+
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
       model: 'local-model',
@@ -221,10 +240,11 @@ ipcMain.handle('llm:chat', async (_, messages) => {
       stream: false
     })
 
-    const req = http.request({
-      hostname: '127.0.0.1',
-      port: 1234,
-      path: '/v1/chat/completions',
+    const protocol = url.protocol === 'https:' ? require('https') : http
+    const req = protocol.request({
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
+      path: url.pathname,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -243,7 +263,7 @@ ipcMain.handle('llm:chat', async (_, messages) => {
       })
     })
 
-    req.on('error', (e) => reject(new Error('LLM 연결 실패 (LM Studio가 실행 중인지 확인): ' + e.message)))
+    req.on('error', (e) => reject(new Error('LLM 연결 실패: ' + e.message)))
     req.setTimeout(30000, () => { req.destroy(); reject(new Error('LLM 타임아웃')) })
     req.write(body)
     req.end()

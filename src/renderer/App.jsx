@@ -4,6 +4,7 @@ import History from './pages/History.jsx'
 import Calendar from './pages/Calendar.jsx'
 import Memos from './pages/Memos.jsx'
 import ChatBot from './components/ChatBot.jsx'
+import SettingsModal from './components/SettingsModal.jsx'
 
 const toDateStr = () => {
   const d = new Date()
@@ -13,6 +14,7 @@ const toDateStr = () => {
 export default function App() {
   const [page, setPage] = useState('today')
   const [chatOpen, setChatOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [chatWidth, setChatWidth] = useState(340)
   const dragRef = useRef(null)
   const [todayData, setTodayData] = useState(null)
@@ -122,8 +124,23 @@ export default function App() {
           </button>
         ))}
 
-        {/* 챗봇 버튼 */}
-        <div style={{ marginLeft: 'auto', WebkitAppRegion: 'no-drag' }}>
+        {/* 우측 버튼 그룹 */}
+        <div style={{ marginLeft: 'auto', WebkitAppRegion: 'no-drag', display: 'flex', gap: 6 }}>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            title="설정"
+            style={{
+              width: 32, height: 32,
+              background: 'var(--bg3)',
+              color: 'var(--text2)',
+              border: '1px solid var(--border)',
+              borderRadius: '50%',
+              fontSize: 15,
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+          >
+            ⚙
+          </button>
           <button
             onClick={() => setChatOpen(o => !o)}
             title="AI 챗봇"
@@ -203,6 +220,7 @@ export default function App() {
           </div>
         )}
       </div>
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
     </div>
   )
 }

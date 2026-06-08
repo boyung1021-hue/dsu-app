@@ -10,6 +10,10 @@ contextBridge.exposeInMainWorld('api', {
   llm: {
     chat: (messages) => ipcRenderer.invoke('llm:chat', messages)
   },
+  settings: {
+    get: () => ipcRenderer.invoke('settings:get'),
+    set: (settings) => ipcRenderer.invoke('settings:set', settings)
+  },
   memo: {
     add: (date, memo) => ipcRenderer.invoke('memo:add', date, memo),
     update: (date, id, memo) => ipcRenderer.invoke('memo:update', date, id, memo),
